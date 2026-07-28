@@ -1,0 +1,9 @@
+{
+  "name": "ab-testing-simulations",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/js/*.test.mjs",
+    "parity": "python scripts/check_cross_language.py"
+  }
+}

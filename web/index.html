@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Run reproducible Bayesian A/B testing simulations in your browser.">
+  <meta name="color-scheme" content="light dark">
+  <title>Bayesian A/B Testing Simulation Lab</title>
+  <link rel="stylesheet" href="css/app.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body data-palette="#2a78d6,#eb6834,#1baf7a">
+  <a class="skip-link" href="#main">Skip to simulation</a>
+  <header class="site-header">
+    <a class="brand" href="https://absmartly.com" aria-label="ABsmartly home">
+      <span class="brand-mark" aria-hidden="true">A/B</span>
+      <span>ABsmartly</span>
+    </a>
+    <nav aria-label="Project links">
+      <a href="https://github.com/absmartly/ab-testing-simulations">Source</a>
+      <a href="https://github.com/absmartly/ab-testing-simulations/blob/main/METHODS.md">Methods</a>
+      <button id="theme-toggle" class="icon-button" type="button" aria-label="Use dark theme" title="Toggle theme">◐</button>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero" aria-labelledby="page-title">
+      <p class="eyebrow">REPRODUCIBLE STATISTICS</p>
+      <h1 id="page-title">Do not trust the claim.<br>Run the simulation.</h1>
+      <p class="lede">Six vendor-neutral experiments test what flat priors, repeated monitoring, expected-loss rules, and informative priors actually do. Every run happens locally in your browser.</p>
+      <div class="hero-actions">
+        <button id="run-active" class="button button-primary" type="button">Run active simulation</button>
+        <button id="load-reference" class="button button-secondary" type="button">Load publication results</button>
+      </div>
+      <p class="quiet">Same seeded algorithms in Python and JavaScript. Open source. No data leaves your device.</p>
+    </section>
+
+    <section class="lab" aria-label="Simulation lab">
+      <div class="experiment-nav" role="tablist" aria-label="Choose a simulation">
+        <button role="tab" aria-selected="true" aria-controls="experiment-panel" id="tab-aa" data-experiment="aa_posterior">1. A/A posterior</button>
+        <button role="tab" aria-selected="false" aria-controls="experiment-panel" id="tab-fixed" data-experiment="fixed_horizon_equivalence">2. Fixed horizon</button>
+        <button role="tab" aria-selected="false" aria-controls="experiment-panel" id="tab-stopping" data-experiment="optional_stopping">3. Repeated monitoring</button>
+        <button role="tab" aria-selected="false" aria-controls="experiment-panel" id="tab-loss" data-experiment="expected_loss_monitoring">4. Expected loss</button>
+        <button role="tab" aria-selected="false" aria-controls="experiment-panel" id="tab-prior" data-experiment="informative_prior">5. Informative prior</button>
+        <button role="tab" aria-selected="false" aria-controls="experiment-panel" id="tab-sweep" data-experiment="threshold_sweep">6. Speed vs error</button>
+      </div>
+
+      <div id="experiment-panel" class="experiment-panel" role="tabpanel" aria-labelledby="tab-aa">
+        <aside class="controls" aria-labelledby="controls-title">
+          <div>
+            <p class="eyebrow">CONFIGURATION</p>
+            <h2 id="controls-title">Change the assumptions</h2>
+          </div>
+          <form id="simulation-form"></form>
+          <div class="control-actions">
+            <button id="run-form" class="button button-primary" type="submit" form="simulation-form">Run simulation</button>
+            <button id="cancel-run" class="button button-secondary" type="button" hidden>Cancel</button>
+            <button id="reset-form" class="text-button" type="button">Reset defaults</button>
+          </div>
+          <div id="run-status" class="run-status" role="status" aria-live="polite">Ready.</div>
+          <progress id="run-progress" max="1" value="0" hidden>0%</progress>
+          <p class="control-note">Browser defaults use fewer trials than the publication run. Every proportion includes a 95% Monte Carlo confidence interval.</p>
+        </aside>
+
+        <article class="results" aria-labelledby="experiment-title">
+          <header class="result-header">
+            <div>
+              <p class="eyebrow" id="experiment-number">EXPERIMENT 1</p>
+              <h2 id="experiment-title">A/A posterior sign probability</h2>
+              <p id="experiment-question">Does P(B &gt; A) converge to zero when A and B are identical?</p>
+            </div>
+            <div class="result-actions">
+              <button id="copy-link" class="button button-compact" type="button">Copy configuration</button>
+              <button id="download-json" class="button button-compact" type="button" disabled>Download JSON</button>
+              <button id="download-csv" class="button button-compact" type="button" disabled>Download CSV</button>
+            </div>
+          </header>
+
+          <div id="result-placeholder" class="placeholder">
+            <p class="placeholder-number">1/6</p>
+            <h3>Ready to test the claim</h3>
+            <p>Run the active simulation, or load the committed publication results.</p>
+          </div>
+          <div id="result-content" hidden>
+            <div id="stat-grid" class="stat-grid"></div>
+            <div id="chart-region" class="chart-region"></div>
+            <section class="interpretation" aria-labelledby="interpretation-title">
+              <h3 id="interpretation-title">What this result means</h3>
+              <p id="interpretation-text"></p>
+              <p id="method-note" class="method-note"></p>
+            </section>
+            <details class="table-details" open>
+              <summary>View the data table</summary>
+              <div id="table-region" class="table-scroll"></div>
+            </details>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="principles" aria-labelledby="principles-title">
+      <p class="eyebrow">WHAT IS BEING TESTED</p>
+      <h2 id="principles-title">Inference, monitoring, and decisions are separate choices.</h2>
+      <div class="principle-grid">
+        <article><span>01</span><h3>The prior</h3><p>A flat prior does not encode your historical effect distribution. An informative one can, and its misspecification is measurable.</p></article>
+        <article><span>02</span><h3>The stopping rule</h3><p>A posterior output does not automatically make repeated threshold crossing safe. The stopping rule is part of the procedure.</p></article>
+        <article><span>03</span><h3>The loss function</h3><p>Expected loss is a business rule, not an error guarantee. Its threshold determines how often noise becomes a decision.</p></article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Built for independent verification. <a href="https://github.com/absmartly/ab-testing-simulations">Apache-2.0 source</a>.</p>
+    <p><a href="https://absmartly.com">ABsmartly</a></p>
+  </footer>
+
+  <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
+</body>
+</html>
