@@ -564,9 +564,18 @@ async function loadReference() {
 
 function toSnake(value) { return value.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`); }
 
+function applyThemeAssets() {
+  const dark = document.documentElement.dataset.theme === "dark";
+  const light = document.querySelector(".brand .logo-light");
+  const darkLogo = document.querySelector(".brand .logo-dark");
+  if (light) light.hidden = dark;
+  if (darkLogo) darkLogo.hidden = !dark;
+}
+
 function initialize() {
   const savedTheme = localStorage.getItem("theme");
   if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+  applyThemeAssets();
   const params = new URLSearchParams(location.search);
   const experiment = EXPERIMENTS[params.get("experiment")] ? params.get("experiment") : "aa_posterior";
   let config = null;
@@ -602,6 +611,7 @@ function initialize() {
   el("theme-toggle").addEventListener("click", () => {
     const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = next; localStorage.setItem("theme", next);
+    applyThemeAssets();
     el("theme-toggle").setAttribute("aria-label", `Use ${next === "dark" ? "light" : "dark"} theme`);
   });
 }
