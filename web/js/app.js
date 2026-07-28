@@ -668,6 +668,49 @@ async function loadReference() {
   }
 }
 
+// A link that carries parameters should show results, not a form the reader has
+// to submit. Two paths:
+//   1. The parameters match the committed publication run -> serve that result
+//      instantly. Identical numbers, no waiting, and it is what the article links
+//      point at.
+//   2. Anything else -> start the live simulation automatically.
+// Append &run=0 to open a configured form without running.
+function sameConfig(linkConfig, committedConfig) {
+  return EXPERIMENTS[state.active].fields.every((field) => {
+    const committed = committedConfig[toSnake(field.key)];
+    if (committed === undefined) return true;
+    let want = Array.isArray(committed)
+      ? committed.map((x) => (x === null ? "flat" : x)).join(",")
+      : committed;
+    const got = linkConfig[field.key] ?? field.value;
+    if (field.type === "number") return Number(got) === Number(want);
+    return String(got).split(",").map((x) => x.trim()).join(",")
+        === String(want).split(",").map((x) => x.trim()).join(",");
+  });
+}
+
+async function autoRun(linkConfig) {
+  try {
+    if (!state.reference) {
+      const response = await fetch("results/reference-results.json");
+      if (response.ok) state.reference = await response.json();
+    }
+    const committed = state.reference?.results?.[state.active];
+    if (committed && sameConfig(linkConfig, committed.config)) {
+      state.result = committed;
+      renderResult(committed);
+      setStatus("Showing the committed publication result for these parameters.", { quiet: true });
+      return;
+    }
+  } catch {
+    // Fall through to a live run: a missing results file must not block the page.
+  }
+  // Not the committed configuration, so compute it. Say so, because a large
+  // trial count can take a while and silence would look like a broken link.
+  setStatus("Running this configuration…");
+  runSimulation();
+}
+
 function toSnake(value) { return value.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`); }
 
 // When "show all" is on, every description stays open and the individual
@@ -708,6 +751,7 @@ function initialize() {
   }
   setActive(experiment, config);
   syncHelpVisibility();
+  if (config && params.get("run") !== "0") autoRun(config);
   document.querySelectorAll('[role="tab"]').forEach((tab) => {
     tab.addEventListener("click", () => setActive(tab.dataset.experiment));
     tab.addEventListener("keydown", (event) => {

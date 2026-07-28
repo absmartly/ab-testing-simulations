@@ -49,6 +49,8 @@ Every parameter can be set from the query string, so a configuration is a plain,
 
 Omitted parameters use that field's default, and out-of-range or malformed values fall back to it rather than running an invalid configuration. The address bar updates as you edit, so the URL you copy always reproduces what is on screen. Each field name matches the CLI/Python argument for the same quantity.
 
+**A link with parameters shows results immediately, with nothing to click.** If the parameters match the committed publication run, that stored result is displayed instantly; any other configuration is simulated in the browser on arrival. Append `&run=0` to open a pre-filled form without running it.
+
 For local development:
 
 ```bash
