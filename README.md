@@ -41,6 +41,14 @@ Use `ab-simulations --help` for all options.
 
 Open the [GitHub Pages simulation lab](https://absmartly.github.io/ab-testing-simulations/) to change assumptions, run simulations in your browser, inspect charts and tables, and download the results. Computation runs locally in a Web Worker. No experiment data is uploaded.
 
+Every parameter can be set from the query string, so a configuration is a plain, readable link:
+
+```
+?experiment=optional_stopping&looks=12&trials=100000&threshold=0.95&seed=7
+```
+
+Omitted parameters use that field's default, and out-of-range or malformed values fall back to it rather than running an invalid configuration. The address bar updates as you edit, so the URL you copy always reproduces what is on screen. Each field name matches the CLI/Python argument for the same quantity.
+
 For local development:
 
 ```bash

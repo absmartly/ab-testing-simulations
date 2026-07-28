@@ -229,17 +229,61 @@ function setActive(experiment, config = null) {
   updateUrl();
 }
 
+// Parameters travel in the query string under their own names, so a link is
+// readable and can be written by hand:
+//   ?experiment=optional_stopping&looks=12&trials=100000&seed=7
+// Anything omitted falls back to that field's default. Values are validated
+// against the field definition, so a malformed link degrades to the default
+// instead of running a nonsense configuration.
+function parseFieldParam(field, raw) {
+  if (raw === null || raw.trim() === "") return undefined;
+  const text = raw.trim();
+  if (field.type === "number") {
+    const value = Number(text);
+    if (!Number.isFinite(value)) return undefined;
+    if (field.min !== undefined && value < field.min) return undefined;
+    if (field.max !== undefined && value > field.max) return undefined;
+    return value;
+  }
+  if (field.key === "assumedPriorSds") {
+    const parts = text.split(",").map((x) => x.trim().toLowerCase())
+      .map((x) => (x === "flat" || x === "none" ? "flat" : Number(x)))
+      .filter((x) => x === "flat" || Number.isFinite(x));
+    return parts.length ? parts.join(",") : undefined;
+  }
+  if (field.key === "sampleSizes" || field.key === "thresholds") {
+    const parts = text.split(",").map((x) => Number(x.trim())).filter(Number.isFinite);
+    return parts.length ? parts.join(",") : undefined;
+  }
+  return text;
+}
+
+function configFromParams(experiment, params) {
+  const config = {};
+  for (const field of EXPERIMENTS[experiment].fields) {
+    const value = parseFieldParam(field, params.get(field.key));
+    if (value !== undefined) config[field.key] = value;
+  }
+  return Object.keys(config).length ? config : null;
+}
+
+// Keep the address bar in step with the visible configuration, so the URL a
+// reader copies always reproduces exactly what is on screen.
 function updateUrl() {
-  const url = new URL(location.href);
-  url.searchParams.set("experiment", state.active);
-  url.searchParams.delete("config");
-  history.replaceState(null, "", url);
+  history.replaceState(null, "", shareUrl());
 }
 
 function shareUrl() {
   const url = new URL(location.href);
+  url.search = "";
   url.searchParams.set("experiment", state.active);
-  url.searchParams.set("config", btoa(unescape(encodeURIComponent(JSON.stringify(currentConfig())))));
+  const config = currentConfig();
+  for (const field of EXPERIMENTS[state.active].fields) {
+    let value = config[field.key];
+    if (value === undefined) continue;
+    if (Array.isArray(value)) value = value.map((x) => (x === null ? "flat" : x)).join(",");
+    url.searchParams.set(field.key, value);
+  }
   return url.toString();
 }
 
@@ -657,8 +701,9 @@ function initialize() {
   applyThemeAssets();
   const params = new URLSearchParams(location.search);
   const experiment = EXPERIMENTS[params.get("experiment")] ? params.get("experiment") : "aa_posterior";
-  let config = null;
-  if (params.get("config")) {
+  let config = configFromParams(experiment, params);
+  // Backward compatibility with earlier base64 `config` links.
+  if (!config && params.get("config")) {
     try { config = JSON.parse(decodeURIComponent(escape(atob(params.get("config"))))); } catch { config = null; }
   }
   setActive(experiment, config);
@@ -676,6 +721,7 @@ function initialize() {
     });
   });
   form.addEventListener("submit", (event) => { event.preventDefault(); runSimulation(); });
+  form.addEventListener("input", updateUrl);
   el("run-active").addEventListener("click", runSimulation);
   el("run-form").addEventListener("click", (event) => { event.preventDefault(); runSimulation(); });
   el("cancel-run").addEventListener("click", () => { cancelRun(); el("run-form").disabled = false; setStatus("Run cancelled."); });
