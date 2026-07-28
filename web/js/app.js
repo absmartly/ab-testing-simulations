@@ -1,15 +1,22 @@
+const SEED_HELP = "Starting value for the deterministic random stream. The same seed reproduces the same numbers here and in the Python package, so any result on this page can be checked independently.";
+const TRIALS_HELP = "How many independent experiments to simulate. Higher values narrow the Monte Carlo confidence interval on every reported rate, at the cost of a longer run.";
+
 const EXPERIMENTS = {
   aa_posterior: {
     number: 1,
     title: "A/A posterior sign probability",
     question: "Does P(B > A) converge to zero when A and B are identical?",
     fields: [
-      { key: "sampleSizes", label: "Sample sizes per arm", type: "text", value: "1000,10000,100000", hint: "Comma-separated" },
-      { key: "baselineRate", label: "Baseline conversion rate", type: "number", value: 0.05, min: 0.001, max: 0.999, step: "any" },
-      { key: "trials", label: "Repeated A/A tests", type: "number", value: 250, min: 50, max: 2000, step: 50 },
-      { key: "posteriorDraws", label: "Posterior draws per test", type: "number", value: 1000, min: 100, max: 5000, step: 100 },
-      { key: "threshold", label: "Decision threshold", type: "number", value: 0.95, min: 0.5, max: 0.999, step: "any" },
-      { key: "seed", label: "Seed", type: "number", value: 20260728, min: 1, max: 4294967295, step: 1 },
+      { key: "sampleSizes", label: "Sample sizes per arm", type: "text", value: "1000,10000,100000", hint: "Comma-separated",
+        help: "Users per arm, one row of results per value. Listing several sizes is the point of this experiment: it shows whether the reported probability moves toward zero as evidence accumulates. Both arms always receive the same number of users." },
+      { key: "baselineRate", label: "Baseline conversion rate", type: "number", value: 0.05, min: 0.001, max: 0.999, step: "any",
+        help: "The true conversion rate used for BOTH arms. Because this is an A/A test the arms are identical, so the true difference is exactly zero and the true probability that B beats A is zero." },
+      { key: "trials", label: "Repeated A/A tests", type: "number", value: 250, min: 50, max: 2000, step: 50, help: TRIALS_HELP },
+      { key: "posteriorDraws", label: "Posterior draws per test", type: "number", value: 1000, min: 100, max: 5000, step: 100,
+        help: "Monte Carlo draws taken from each arm's Beta posterior to estimate P(B > A). This controls precision of the probability itself, not the precision of the simulated experiment. Raise it if results near the threshold look jumpy." },
+      { key: "threshold", label: "Decision threshold", type: "number", value: 0.95, min: 0.5, max: 0.999, step: "any",
+        help: "The posterior probability at which a team would declare a winner. Used here only to report how often a pure-noise test would have been called a win." },
+      { key: "seed", label: "Seed", type: "number", value: 20260728, min: 1, max: 4294967295, step: 1, help: SEED_HELP },
     ],
   },
   fixed_horizon_equivalence: {
@@ -17,12 +24,17 @@ const EXPERIMENTS = {
     title: "Fixed-horizon equivalence",
     question: "At one planned analysis, what does a flat prior add to the decision?",
     fields: [
-      { key: "sampleSizePerArm", label: "Sample size per arm", type: "number", value: 20000, min: 100, max: 1000000, step: 100 },
-      { key: "baselineRate", label: "Baseline conversion rate", type: "number", value: 0.05, min: 0.001, max: 0.999, step: "any" },
-      { key: "trials", label: "Repeated A/A tests", type: "number", value: 1000, min: 100, max: 10000, step: 100 },
-      { key: "posteriorDraws", label: "Posterior draws per test", type: "number", value: 1000, min: 100, max: 5000, step: 100 },
-      { key: "threshold", label: "Posterior threshold", type: "number", value: 0.95, min: 0.5, max: 0.999, step: "any" },
-      { key: "seed", label: "Seed", type: "number", value: 20260729, min: 1, max: 4294967295, step: 1 },
+      { key: "sampleSizePerArm", label: "Sample size per arm", type: "number", value: 20000, min: 100, max: 1000000, step: 100,
+        help: "Users per arm at the single pre-planned analysis. There is deliberately no monitoring in this experiment: each simulated test is analysed exactly once, which is how a fixed-horizon test is supposed to be run." },
+      { key: "baselineRate", label: "Baseline conversion rate", type: "number", value: 0.05, min: 0.001, max: 0.999, step: "any",
+        help: "True conversion rate for both arms. The null hypothesis is true by construction, so every rejection either rule makes is a false positive." },
+      { key: "trials", label: "Repeated A/A tests", type: "number", value: 1000, min: 100, max: 10000, step: 100,
+        help: "Number of independent A/A experiments. Each one contributes a Bayesian decision and a frequentist decision to the agreement matrix." },
+      { key: "posteriorDraws", label: "Posterior draws per test", type: "number", value: 1000, min: 100, max: 5000, step: 100,
+        help: "Draws used to estimate P(B > A) for each test. Too few draws add noise right at the decision boundary and cause the two rules to disagree for purely numerical reasons rather than statistical ones." },
+      { key: "threshold", label: "Posterior threshold", type: "number", value: 0.95, min: 0.5, max: 0.999, step: "any",
+        help: "The Bayesian decision cutoff. The frequentist comparison automatically uses the matching one-sided alpha of 1 minus this value, so the two rules are always compared at equivalent strictness." },
+      { key: "seed", label: "Seed", type: "number", value: 20260729, min: 1, max: 4294967295, step: 1, help: SEED_HELP },
     ],
   },
   optional_stopping: {
@@ -30,12 +42,16 @@ const EXPERIMENTS = {
     title: "Repeated monitoring",
     question: "Is a flat-prior posterior threshold automatically safe to monitor?",
     fields: [
-      { key: "totalSamplePerArm", label: "Maximum sample per arm", type: "number", value: 24000, min: 1000, max: 1000000, step: 1000 },
-      { key: "looks", label: "Monitoring looks", type: "number", value: 12, min: 1, max: 100, step: 1 },
-      { key: "trials", label: "Repeated A/A tests", type: "number", value: 30000, min: 1000, max: 500000, step: 1000 },
-      { key: "threshold", label: "Posterior threshold", type: "number", value: 0.95, min: 0.5, max: 0.999, step: "any" },
-      { key: "sd", label: "Outcome standard deviation", type: "number", value: 1, min: 0.001, max: 1000, step: "any" },
-      { key: "seed", label: "Seed", type: "number", value: 7, min: 1, max: 4294967295, step: 1 },
+      { key: "totalSamplePerArm", label: "Maximum sample per arm", type: "number", value: 24000, min: 1000, max: 1000000, step: 1000,
+        help: "Users per arm if the test runs to its full horizon without stopping early. Monitoring looks are spaced evenly across this total." },
+      { key: "looks", label: "Monitoring looks", type: "number", value: 12, min: 1, max: 100, step: 1,
+        help: "How many times results are inspected with the option to stop. This is the parameter that drives the whole result: set it to 1 and you have a fixed-horizon test at the nominal error rate; raise it and the false-positive rate climbs, because each extra look is another chance for noise to cross the line." },
+      { key: "trials", label: "Repeated A/A tests", type: "number", value: 30000, min: 1000, max: 500000, step: 1000, help: TRIALS_HELP },
+      { key: "threshold", label: "Posterior threshold", type: "number", value: 0.95, min: 0.5, max: 0.999, step: "any",
+        help: "Stop and declare a winner the first time P(delta > 0 | data) exceeds this value. Under a flat prior this rule is arithmetically identical to stopping when the one-sided p-value falls below 1 minus this value, which is why both rows in the results are the same." },
+      { key: "sd", label: "Outcome standard deviation", type: "number", value: 1, min: 0.001, max: 1000, step: "any",
+        help: "Spread of the outcome for a single user. It scales the noise but not the conclusion: because the null is true, the false-positive rate is unchanged by this value. Change it to match your own metric's units." },
+      { key: "seed", label: "Seed", type: "number", value: 7, min: 1, max: 4294967295, step: 1, help: SEED_HELP },
     ],
   },
   expected_loss_monitoring: {
@@ -43,12 +59,16 @@ const EXPERIMENTS = {
     title: "Expected-loss stopping",
     question: "Does a small posterior expected loss imply a controlled false-positive rate?",
     fields: [
-      { key: "totalSamplePerArm", label: "Maximum sample per arm", type: "number", value: 24000, min: 1000, max: 1000000, step: 1000 },
-      { key: "looks", label: "Monitoring looks", type: "number", value: 12, min: 1, max: 100, step: 1 },
-      { key: "trials", label: "Repeated A/A tests", type: "number", value: 30000, min: 1000, max: 500000, step: 1000 },
-      { key: "lossThreshold", label: "Expected-loss threshold", type: "number", value: 0.0015, min: 0.000001, max: 1, step: "any" },
-      { key: "sd", label: "Outcome standard deviation", type: "number", value: 1, min: 0.001, max: 1000, step: "any" },
-      { key: "seed", label: "Seed", type: "number", value: 8, min: 1, max: 4294967295, step: 1 },
+      { key: "totalSamplePerArm", label: "Maximum sample per arm", type: "number", value: 24000, min: 1000, max: 1000000, step: 1000,
+        help: "Users per arm if the test runs to its full horizon. Looks are spaced evenly across this total." },
+      { key: "looks", label: "Monitoring looks", type: "number", value: 12, min: 1, max: 100, step: 1,
+        help: "How many times the expected-loss rule is evaluated with the option to stop. As with any repeated rule, more looks mean more opportunities to trigger on noise." },
+      { key: "trials", label: "Repeated A/A tests", type: "number", value: 30000, min: 1000, max: 500000, step: 1000, help: TRIALS_HELP },
+      { key: "lossThreshold", label: "Expected-loss threshold", type: "number", value: 0.0015, min: 0.000001, max: 1, step: "any",
+        help: "Stop when the posterior expected loss of shipping B falls below this, expressed in outcome-standard-deviation units. This is a business rule, not an error guarantee: tightening it makes stopping harder, but no value of it pins the false-positive rate to a level you chose in advance. That is the point the experiment demonstrates." },
+      { key: "sd", label: "Outcome standard deviation", type: "number", value: 1, min: 0.001, max: 1000, step: "any",
+        help: "Spread of the outcome for a single user. The loss threshold is interpreted relative to this, so changing one without the other changes how strict the rule effectively is." },
+      { key: "seed", label: "Seed", type: "number", value: 8, min: 1, max: 4294967295, step: 1, help: SEED_HELP },
     ],
   },
   informative_prior: {
@@ -56,12 +76,17 @@ const EXPERIMENTS = {
     title: "Informative priors and shrinkage",
     question: "When does prior information improve estimation and shipping decisions?",
     fields: [
-      { key: "trials", label: "Experiment portfolio size", type: "number", value: 100000, min: 1000, max: 1000000, step: 1000 },
-      { key: "truePriorSd", label: "True effect-distribution SD", type: "number", value: 0.01, min: 0.0001, max: 1, step: "any" },
-      { key: "assumedPriorSds", label: "Assumed prior SDs", type: "text", value: "flat,0.00333,0.005,0.01,0.02,0.05", hint: "Use flat for no shrinkage" },
-      { key: "standardError", label: "Measurement standard error", type: "number", value: 0.01, min: 0.0001, max: 1, step: "any" },
-      { key: "decisionProbability", label: "Ship probability threshold", type: "number", value: 0.95, min: 0.5, max: 0.999, step: "any" },
-      { key: "seed", label: "Seed", type: "number", value: 11, min: 1, max: 4294967295, step: 1 },
+      { key: "trials", label: "Experiment portfolio size", type: "number", value: 100000, min: 1000, max: 1000000, step: 1000,
+        help: "How many experiments make up the simulated portfolio. Each gets its own true effect drawn from the distribution below, which is what makes a prior meaningful here: the prior describes the portfolio, not any single test." },
+      { key: "truePriorSd", label: "True effect-distribution SD", type: "number", value: 0.01, min: 0.0001, max: 1, step: "any",
+        help: "Spread of the true effects across the portfolio. This is the ground truth of the simulation: most experiments do very little, a few do more. In a real organisation you would estimate this from your own experiment history." },
+      { key: "assumedPriorSds", label: "Assumed prior SDs", type: "text", value: "flat,0.00333,0.005,0.01,0.02,0.05", hint: "Use flat for no shrinkage",
+        help: "The prior widths the analyst assumes, compared side by side. Use flat for no shrinkage, which reproduces the ordinary frequentist estimate. A value equal to the true SD above is the correctly specified prior; the others are deliberately misspecified so you can see how much a wrong prior costs." },
+      { key: "standardError", label: "Measurement standard error", type: "number", value: 0.01, min: 0.0001, max: 1, step: "any",
+        help: "Noise on each experiment's observed effect. What matters is its ratio to the true effect SD: when noise is large relative to real effects, shrinkage helps a lot; when experiments are precise, it helps little." },
+      { key: "decisionProbability", label: "Ship probability threshold", type: "number", value: 0.95, min: 0.5, max: 0.999, step: "any",
+        help: "Posterior probability required before shipping a variant. The same threshold is applied to every prior setting so that ship rates and precision are directly comparable across rows." },
+      { key: "seed", label: "Seed", type: "number", value: 11, min: 1, max: 4294967295, step: 1, help: SEED_HELP },
     ],
   },
   threshold_sweep: {
@@ -69,12 +94,17 @@ const EXPERIMENTS = {
     title: "Decision speed versus error",
     question: "How much false-positive risk purchases an earlier decision?",
     fields: [
-      { key: "thresholds", label: "Posterior thresholds", type: "text", value: "0.8,0.85,0.9,0.925,0.95,0.975,0.99,0.995", hint: "Comma-separated" },
-      { key: "totalSamplePerArm", label: "Maximum sample per arm", type: "number", value: 24000, min: 1000, max: 1000000, step: 1000 },
-      { key: "looks", label: "Monitoring looks", type: "number", value: 12, min: 1, max: 100, step: 1 },
-      { key: "trials", label: "Trials under H0 and H1", type: "number", value: 30000, min: 1000, max: 250000, step: 1000 },
-      { key: "trueEffectUnderH1", label: "True effect under H1", type: "number", value: 0.015, min: 0.0001, max: 10, step: "any" },
-      { key: "seed", label: "Seed", type: "number", value: 17, min: 1, max: 4294967295, step: 1 },
+      { key: "thresholds", label: "Posterior thresholds", type: "text", value: "0.8,0.85,0.9,0.925,0.95,0.975,0.99,0.995", hint: "Comma-separated",
+        help: "The posterior cutoffs to compare, one row each. Every threshold is evaluated against the same simulated data under both hypotheses, so the speed and error columns are directly comparable." },
+      { key: "totalSamplePerArm", label: "Maximum sample per arm", type: "number", value: 24000, min: 1000, max: 1000000, step: 1000,
+        help: "Users per arm at the full horizon. Looks are spaced evenly across this total." },
+      { key: "looks", label: "Monitoring looks", type: "number", value: 12, min: 1, max: 100, step: 1,
+        help: "How many times each threshold is checked with the option to stop." },
+      { key: "trials", label: "Trials under H0 and H1", type: "number", value: 30000, min: 1000, max: 250000, step: 1000,
+        help: "Experiments simulated under each hypothesis. The false-positive column uses the H0 runs (no real effect) and the power column uses the H1 runs (a real effect of the size below)." },
+      { key: "trueEffectUnderH1", label: "True effect under H1", type: "number", value: 0.015, min: 0.0001, max: 10, step: "any",
+        help: "The real effect used for the power and speed columns, in outcome-standard-deviation units. The false-positive column always uses a true effect of exactly zero, regardless of this setting." },
+      { key: "seed", label: "Seed", type: "number", value: 17, min: 1, max: 4294967295, step: 1, help: SEED_HELP },
     ],
   },
 };
@@ -117,9 +147,31 @@ function renderForm(configOverride = null) {
   for (const field of EXPERIMENTS[state.active].fields) {
     const wrapper = document.createElement("div");
     wrapper.className = "field";
+    const labelRow = document.createElement("div");
+    labelRow.className = "field-label-row";
     const label = document.createElement("label");
     label.htmlFor = `field-${field.key}`;
     label.textContent = field.label;
+    labelRow.append(label);
+    // Help is a real disclosure, not a hover-only tooltip: it must be reachable
+    // by keyboard and on touch, where :hover does not exist.
+    let helpId;
+    if (field.help) {
+      helpId = `help-${field.key}`;
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "help-toggle";
+      toggle.textContent = "?";
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.setAttribute("aria-controls", helpId);
+      toggle.setAttribute("aria-label", `What is ${field.label}?`);
+      toggle.addEventListener("click", () => {
+        const open = toggle.getAttribute("aria-expanded") === "true";
+        toggle.setAttribute("aria-expanded", String(!open));
+        wrapper.querySelector(".field-help").hidden = open;
+      });
+      labelRow.append(toggle);
+    }
     const input = document.createElement("input");
     input.id = `field-${field.key}`;
     input.name = field.key;
@@ -129,12 +181,21 @@ function renderForm(configOverride = null) {
     if (Array.isArray(value)) value = value.map((item) => item === null ? "flat" : item).join(",");
     input.value = value;
     for (const key of ["min", "max", "step"]) if (field[key] !== undefined) input[key] = field[key];
-    wrapper.append(label, input);
+    if (helpId) input.setAttribute("aria-describedby", helpId);
+    wrapper.append(labelRow, input);
     if (field.hint) {
       const hint = document.createElement("span");
       hint.className = "hint";
       hint.textContent = field.hint;
       wrapper.append(hint);
+    }
+    if (field.help) {
+      const help = document.createElement("p");
+      help.className = "field-help";
+      help.id = helpId;
+      help.textContent = field.help;
+      help.hidden = true;
+      wrapper.append(help);
     }
     form.append(wrapper);
   }
@@ -164,6 +225,7 @@ function setActive(experiment, config = null) {
   el("download-csv").disabled = true;
   el("run-status").textContent = "Ready.";
   renderForm(config);
+  syncHelpVisibility();
   updateUrl();
 }
 
@@ -564,6 +626,14 @@ async function loadReference() {
 
 function toSnake(value) { return value.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`); }
 
+// When "show all" is on, every description stays open and the individual
+// toggles follow it, so the two controls can never disagree.
+function syncHelpVisibility() {
+  const showAll = el("toggle-all-help")?.getAttribute("aria-pressed") === "true";
+  form.querySelectorAll(".field-help").forEach((help) => { help.hidden = !showAll; });
+  form.querySelectorAll(".help-toggle").forEach((t) => t.setAttribute("aria-expanded", String(showAll)));
+}
+
 function applyThemeAssets() {
   const dark = document.documentElement.dataset.theme === "dark";
   const light = document.querySelector(".brand .logo-light");
@@ -583,6 +653,7 @@ function initialize() {
     try { config = JSON.parse(decodeURIComponent(escape(atob(params.get("config"))))); } catch { config = null; }
   }
   setActive(experiment, config);
+  syncHelpVisibility();
   document.querySelectorAll('[role="tab"]').forEach((tab) => {
     tab.addEventListener("click", () => setActive(tab.dataset.experiment));
     tab.addEventListener("keydown", (event) => {
@@ -599,7 +670,14 @@ function initialize() {
   el("run-active").addEventListener("click", runSimulation);
   el("run-form").addEventListener("click", (event) => { event.preventDefault(); runSimulation(); });
   el("cancel-run").addEventListener("click", () => { cancelRun(); el("run-form").disabled = false; el("run-status").textContent = "Cancelled."; });
-  el("reset-form").addEventListener("click", () => renderForm());
+  el("reset-form").addEventListener("click", () => { renderForm(); syncHelpVisibility(); });
+  el("toggle-all-help").addEventListener("click", () => {
+    const btn = el("toggle-all-help");
+    const show = btn.getAttribute("aria-pressed") !== "true";
+    btn.setAttribute("aria-pressed", String(show));
+    btn.textContent = show ? "Hide parameter descriptions" : "Show what each parameter does";
+    syncHelpVisibility();
+  });
   el("load-reference").addEventListener("click", loadReference);
   el("copy-link").addEventListener("click", async () => {
     await navigator.clipboard.writeText(shareUrl());
