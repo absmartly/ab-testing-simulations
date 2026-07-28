@@ -223,7 +223,7 @@ function setActive(experiment, config = null) {
   el("result-content").hidden = true;
   el("download-json").disabled = true;
   el("download-csv").disabled = true;
-  el("run-status").textContent = "Ready.";
+  setStatus("", { quiet: true });
   renderForm(config);
   syncHelpVisibility();
   updateUrl();
@@ -261,21 +261,21 @@ function runSimulation() {
   el("run-progress").hidden = false;
   el("run-progress").value = 0;
   el("cancel-run").hidden = false;
-  el("run-status").textContent = "Simulating locally…";
+  setStatus("Simulating locally…");
   el("run-form").disabled = true;
   worker.addEventListener("message", (event) => {
     if (event.data.id !== runId) return;
     if (event.data.type === "progress") {
       el("run-progress").value = event.data.value;
-      el("run-status").textContent = `Simulating locally… ${Math.round(event.data.value * 100)}%`;
+      setStatus(`Simulating locally… ${Math.round(event.data.value * 100)}%`);
     } else if (event.data.type === "result") {
       state.result = event.data.result;
       renderResult(state.result);
-      el("run-status").textContent = "Complete.";
+      setStatus("Simulation complete.", { quiet: true });
       el("run-form").disabled = false;
       cancelRun();
     } else if (event.data.type === "error") {
-      el("run-status").textContent = `Error: ${event.data.message}`;
+      setStatus(`Error: ${event.data.message}`);
       el("run-form").disabled = false;
       cancelRun();
     }
@@ -605,7 +605,7 @@ function download(content, filename, mime) {
 }
 
 async function loadReference() {
-  el("run-status").textContent = "Loading committed publication results…";
+  setStatus("Loading committed publication results…");
   try {
     if (!state.reference) {
       const response = await fetch("results/reference-results.json");
@@ -618,9 +618,9 @@ async function loadReference() {
     const config = Object.fromEntries(EXPERIMENTS[state.active].fields.map((field) => [field.key, result.config[toSnake(field.key)] ?? field.value]));
     renderForm(config);
     renderResult(result);
-    el("run-status").textContent = "Loaded committed publication result.";
+    setStatus("Loaded committed publication result.", { quiet: true });
   } catch (error) {
-    el("run-status").textContent = `Could not load publication results: ${error.message}`;
+    setStatus(`Could not load publication results: ${error.message}`);
   }
 }
 
@@ -628,6 +628,15 @@ function toSnake(value) { return value.replace(/[A-Z]/g, (letter) => `_${letter.
 
 // When "show all" is on, every description stays open and the individual
 // toggles follow it, so the two controls can never disagree.
+// Status text serves two audiences. Progress and errors are shown; routine
+// idle/success states are announced to screen readers only, because the visible
+// result (charts appearing, progress bar moving) already conveys them sighted.
+function setStatus(text, { quiet = false } = {}) {
+  const node = el("run-status");
+  node.textContent = text;
+  node.classList.toggle("sr-only", quiet);
+}
+
 function syncHelpVisibility() {
   const showAll = el("toggle-all-help")?.getAttribute("aria-pressed") === "true";
   form.querySelectorAll(".field-help").forEach((help) => { help.hidden = !showAll; });
@@ -669,7 +678,7 @@ function initialize() {
   form.addEventListener("submit", (event) => { event.preventDefault(); runSimulation(); });
   el("run-active").addEventListener("click", runSimulation);
   el("run-form").addEventListener("click", (event) => { event.preventDefault(); runSimulation(); });
-  el("cancel-run").addEventListener("click", () => { cancelRun(); el("run-form").disabled = false; el("run-status").textContent = "Cancelled."; });
+  el("cancel-run").addEventListener("click", () => { cancelRun(); el("run-form").disabled = false; setStatus("Run cancelled."); });
   el("reset-form").addEventListener("click", () => { renderForm(); syncHelpVisibility(); });
   el("toggle-all-help").addEventListener("click", () => {
     const btn = el("toggle-all-help");
