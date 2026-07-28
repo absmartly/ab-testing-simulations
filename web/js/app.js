@@ -668,16 +668,6 @@ async function loadReference() {
   }
 }
 
-// A link that carries parameters runs the simulation on arrival, so the reader
-// lands on results rather than a form. These configurations complete in roughly
-// 50ms-4s in the browser, and because the PRNG is seeded and the Python/JS
-// kernels are parity-tested, a live run reproduces the published figure exactly
-// rather than approximating it. Append &run=0 to open a configured form without
-// running it.
-function autoRun() {
-  runSimulation();
-}
-
 function toSnake(value) { return value.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`); }
 
 // When "show all" is on, every description stays open and the individual
@@ -718,7 +708,11 @@ function initialize() {
   }
   setActive(experiment, config);
   syncHelpVisibility();
-  if (config && params.get("run") !== "0") autoRun();
+  // A link that carries parameters runs on arrival, so the reader lands on
+  // results rather than a form. These configurations take roughly 50ms-4s in the
+  // browser, and the seeded PRNG means a live run reproduces the published
+  // figure exactly rather than approximating it.
+  if (config) runSimulation();
   document.querySelectorAll('[role="tab"]').forEach((tab) => {
     tab.addEventListener("click", () => setActive(tab.dataset.experiment));
     tab.addEventListener("keydown", (event) => {
